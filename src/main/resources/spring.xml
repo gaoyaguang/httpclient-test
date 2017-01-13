@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/util
+    http://www.springframework.org/schema/util/spring-util.xsd">
+
+	<!-- 自动扫描两个包下的内容 ,将带有注解的类 纳入spring容器管理 -->
+	<context:component-scan base-package="com.light.httpclient"></context:component-scan>
+
+	<!-- 引入配置文件 -->
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:init.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- #=========================================Apache httpClient公共配置==========================================# -->
+	<!-- 定义连接管理器 -->
+	<bean id="requestConfigBuilder" class="org.apache.http.client.config.RequestConfig.Builder">
+		<!-- 创建连接的最长时间 -->
+		<property name="connectTimeout" value="${httpclient.connectTimeout}" />
+		<!-- 从连接池中获取到连接的最长时间 -->
+		<property name="connectionRequestTimeout" value="${httpclient.connectionRequestTimeout}" />
+		<!-- 数据传输的最长时间 -->
+		<property name="socketTimeout" value="${httpclient.socketTimeout}" />
+		<!-- 提交请求前测试连接是否可用 -->
+		<property name="staleConnectionCheckEnabled" value="${httpclient.staleConnectionCheckEnabled}" />
+	</bean>
+	<!-- 定义请求参数 -->
+	<bean id="requestConfig" class="org.apache.http.client.config.RequestConfig"
+		factory-bean="requestConfigBuilder" factory-method="build">
+	</bean>
+	<bean id="MILLISECONDS"
+		class="org.springframework.beans.factory.config.FieldRetrievingFactoryBean">
+		<property name="staticField" value="java.util.concurrent.TimeUnit.MILLISECONDS" />
+	</bean>
+
+	<!-- #=========================================Apache httpClient通用配置==========================================# -->
+	<!-- 定义连接管理器 -->
+	<bean id="httpClientConnectionManager"
+		class="org.apache.http.impl.conn.PoolingHttpClientConnectionManager"
+		destroy-method="close">
+		<!-- 最大连接数 -->
+		<property name="maxTotal" value="${httpclient.maxTotal}" />
+		<!-- 设置每个主机地址的并发数 -->
+		<property name="defaultMaxPerRoute" value="${httpclient.defaultMaxPerRoute}" />
+	</bean>
+	<!-- httpClient对象构建器 -->
+	<bean id="httpClientBuilder" class="org.apache.http.impl.client.HttpClientBuilder">
+		<!-- 设置连接管理器 -->
+		<property name="connectionManager" ref="httpClientConnectionManager" />
+		<property name="defaultRequestConfig" ref="requestConfig" />
+	</bean>
+	<!-- 定义httpClient对象 -->
+	<bean id="httpclient" class="org.apache.http.impl.client.CloseableHttpClient"
+		factory-bean="httpClientBuilder" factory-method="build" scope="prototype">
+	</bean>
+	<!-- 定时清理无效连接 -->
+	<bean class="org.apache.http.impl.client.IdleConnectionEvictor"
+		init-method="start" destroy-method="shutdown">
+		<constructor-arg name="connectionManager" ref="httpClientConnectionManager" />
+		<constructor-arg name="sleepTime" value="5000" />
+		<constructor-arg name="sleepTimeUnit" ref="MILLISECONDS" />
+		<constructor-arg name="maxIdleTime" value="10000" />
+		<constructor-arg name="maxIdleTimeUnit" ref="MILLISECONDS" />
+	</bean>
+
+	<!-- #=========================================取消SSL认证配置==========================================# -->
+	<bean id="httpsClientConnectionManager"
+		class="com.light.httpclient.http.ssl.MyPoolingHttpClientConnectionManager"
+		destroy-method="close">
+		<!-- 最大连接数 -->
+		<property name="maxTotal" value="${httpclient.maxTotal}" />
+		<!-- 设置每个主机地址的并发数 -->
+		<property name="defaultMaxPerRoute" value="${httpclient.defaultMaxPerRoute}" />
+	</bean>
+	<bean id="httpsClientBuilder" class="org.apache.http.impl.client.HttpClientBuilder">
+		<!-- 设置连接管理器 -->
+		<property name="connectionManager" ref="httpsClientConnectionManager" />
+		<property name="defaultRequestConfig" ref="requestConfig" />
+	</bean>
+	<bean id="httpsclient" class="org.apache.http.impl.client.CloseableHttpClient"
+		factory-bean="httpsClientBuilder" factory-method="build" scope="prototype">
+	</bean>
+	<!-- 清理无效连接 -->
+	<bean class="org.apache.http.impl.client.IdleConnectionEvictor"
+		init-method="start" destroy-method="shutdown">
+		<constructor-arg name="connectionManager" ref="httpsClientConnectionManager" />
+		<constructor-arg name="sleepTime" value="5000" />
+		<constructor-arg name="sleepTimeUnit" ref="MILLISECONDS" />
+		<constructor-arg name="maxIdleTime" value="10000" />
+		<constructor-arg name="maxIdleTimeUnit" ref="MILLISECONDS" />
+	</bean>
+</beans>

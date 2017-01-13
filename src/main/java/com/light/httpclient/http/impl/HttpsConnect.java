@@ -12,14 +12,18 @@ import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.config.Registry;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.springframework.stereotype.Service;
 
 import com.light.httpclient.http.HttpResult;
+import com.light.httpclient.http.ssl.MySSLConnectionSocketFactory;
 
 /**
  * 
@@ -40,26 +44,32 @@ public class HttpsConnect extends AbstractHttpConnect {
 
 	@Resource
 	private HttpClientBuilder httpClientBuilder;
-	
+
 	@Resource
 	private CloseableHttpClient httpsclient;
-	
+
 	/**
 	 * 
-	 * <p>默认取消SSL验证</p>
-	 * <p>设置之后会进行SSL验证</p>
+	 * <p>
+	 * 默认取消SSL验证
+	 * </p>
+	 * <p>
+	 * 设置之后会进行SSL验证
+	 * </p>
 	 * 
 	 * @param keyStorePath
 	 * @param keyStorepass
 	 */
 	public void setSSLContext(String keyStorePath, String keyStorepass) {
-		httpsclient = httpClientBuilder.setSSLContext(custom(keyStorePath, keyStorepass)).build();
+		Registry<ConnectionSocketFactory> socketFactoryRegistry = MySSLConnectionSocketFactory
+				.getSocketFactoryRegistry(custom(keyStorePath, keyStorepass));
+		PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+		httpsclient = httpClientBuilder.setConnectionManager(connManager).build();
 	}
-	
+
 	public HttpsConnect() {
 		super();
-		// TODO spring配置中已经做了如下操作
-//		httpClientBuilder.setSSLContext(MySSLConnectionSocketFactory.getSSLContext()).build();
+		// httpClientBuilder.setConnectionManager(connManager).build();
 	}
 
 	/**
@@ -85,7 +95,7 @@ public class HttpsConnect extends AbstractHttpConnect {
 			}
 		}
 	}
-	
+
 	public static SSLContext custom(String keyStorePath, String keyStorepass) {
 		SSLContext sc = null;
 		FileInputStream instream = null;

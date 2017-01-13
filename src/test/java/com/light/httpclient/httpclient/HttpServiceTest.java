@@ -27,7 +27,7 @@ public class HttpServiceTest {
 		
 		String url = "https://sso.wsria.com:8443/blog/rest/page/login";
 //		String url = "https://kyfw.12306.cn/otn/";
-//		String url = "http://localhost:8080/traffic-api/test";
+//		String url = "http://fanyi.youdao.com/";
 		try {
 			System.out.println("=================httpConnect测试结果===================");
 			String response = httpConnect.doGet(url).getData();

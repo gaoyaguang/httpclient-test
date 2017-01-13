@@ -7,6 +7,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
@@ -43,5 +47,11 @@ public class MySSLConnectionSocketFactory {
 			e.printStackTrace();
 		}
 		return context;
+	}
+	
+	public static Registry<ConnectionSocketFactory> getSocketFactoryRegistry(SSLContext sslContext) {
+		return RegistryBuilder.<ConnectionSocketFactory>create()
+				.register("http", PlainConnectionSocketFactory.INSTANCE)
+				.register("https", new SSLConnectionSocketFactory(sslContext)).build();
 	}
 }

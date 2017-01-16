@@ -25,8 +25,8 @@ public class HttpServiceTest {
 	@Test
 	public void testDoGet() {
 
-		// String url = "https://sso.wsria.com:8443/blog/rest/page/login";
-		String url = "https://kyfw.12306.cn/otn/";
+		 String url = "https://sso.wsria.com:8443/blog/rest/page/login";
+//		String url = "https://kyfw.12306.cn/otn/";
 		// String url = "http://fanyi.youdao.com/";
 		try {
 			System.out.println("======================普通http请求测试=======================");
@@ -47,6 +47,7 @@ public class HttpServiceTest {
 			System.out.println(response);
 			
 			System.out.println("======================https检查ssl测试=======================");
+			httpsConnect.setMaxTotal(10);
 			String response1 = httpsConnect.setSSLContext("D:/keys/wsriakey", "123456").doGet(url).getData();
 			System.out.println(response1);
 

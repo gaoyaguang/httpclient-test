@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyStore;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.net.ssl.SSLContext;
 
@@ -16,6 +17,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -39,13 +42,16 @@ import com.light.httpclient.util.PropertiesUtil;
  */
 @Service("httpsConnect")
 public class HttpsConnect extends AbstractHttpConnect {
+	
+	private static final Logger logger = LoggerFactory.getLogger(HttpsConnect.class);
 
 	@Resource
 	private HttpClientBuilder httpClientBuilder;
-
-	private static Integer maxTotal;
-
-	private static Integer defaultMaxPerRoute;
+	
+	/**只在检查SSL时用到 */
+	private Integer maxTotal;
+	/**只在检查SSL时用到 */
+	private Integer defaultMaxPerRoute;
 	
 	public HttpsConnect() {
 		super();
@@ -61,15 +67,24 @@ public class HttpsConnect extends AbstractHttpConnect {
 	public void setCloseableHttpClient(@Qualifier("httpsclient")CloseableHttpClient closeableHttpClient) {
 		this.closeableHttpClient = closeableHttpClient;
 	}
-
-	static {
-		String path = "/init.properties";
-		String maxTotals = PropertiesUtil.getValue(path, "httpclient.maxTotal");
-		maxTotal = StringUtils.isBlank(maxTotals) ? 1000 : Integer.parseInt(maxTotals);
-		String defaultMaxPerRoutes = PropertiesUtil.getValue(path, "httpclient.maxTotal");
-		defaultMaxPerRoute = StringUtils.isBlank(defaultMaxPerRoutes) ? 300 : Integer.parseInt(defaultMaxPerRoutes);
+	
+	@PostConstruct
+	public void init() {
+		try {
+			String path = "/init.properties";
+			String maxTotals = PropertiesUtil.getValue(path, "httpclient.maxTotal");
+			if (!StringUtils.isBlank(maxTotals)) {
+				this.setMaxTotal(Integer.parseInt(maxTotals));
+			}
+			String defaultMaxPerRoutes = PropertiesUtil.getValue(path, "httpclient.maxTotal");
+			if (!StringUtils.isBlank(defaultMaxPerRoutes)) {
+				this.setDefaultMaxPerRoute(Integer.parseInt(defaultMaxPerRoutes));
+			} 
+		} catch (Exception e) {
+			logger.error("初始化http配置信息异常：{}", e.getMessage());
+		}
 	}
-
+	
 	/**
 	 * 
 	 * <p>
@@ -114,5 +129,27 @@ public class HttpsConnect extends AbstractHttpConnect {
 			}
 		}
 		return sc;
+	}
+
+	public Integer getDefaultMaxPerRoute() {
+		return defaultMaxPerRoute;
+	}
+	/**
+	 * 仅在检查SSL的情况下起作用
+	 * @param maxTotal
+	 */
+	public void setDefaultMaxPerRoute(Integer defaultMaxPerRoute) {
+		this.defaultMaxPerRoute = defaultMaxPerRoute;
+	}
+
+	public Integer getMaxTotal() {
+		return maxTotal;
+	}
+	/**
+	 * 仅在检查SSL的情况下起作用
+	 * @param maxTotal
+	 */
+	public void setMaxTotal(Integer maxTotal) {
+		this.maxTotal = maxTotal;
 	}
 }

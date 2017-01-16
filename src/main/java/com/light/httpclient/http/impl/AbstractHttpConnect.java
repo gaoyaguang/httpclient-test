@@ -12,22 +12,50 @@ import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 import com.light.httpclient.http.HttpResult;
 import com.light.httpclient.http.inf.HttpService;
 
 public abstract class AbstractHttpConnect implements HttpService {
 
+	protected CloseableHttpClient closeableHttpClient;
+
+	public abstract void setCloseableHttpClient(CloseableHttpClient closeableHttpClient);
+
+	/**
+	 * 
+	 * 请求服务端方法
+	 * 
+	 * @param method
+	 *            请求方式：GET POST DELETE PUT
+	 * @return
+	 * @throws ParseException
+	 * @throws ClientProtocolException
+	 * @throws IOException
+	 */
 	@Override
-	public abstract HttpResult connect(HttpRequestBase method)
-			throws ParseException, ClientProtocolException, IOException;
+	public HttpResult connect(HttpRequestBase method) throws ParseException, ClientProtocolException, IOException {
+		CloseableHttpResponse response = null;
+		try {
+			response = closeableHttpClient.execute(method);
+			return new HttpResult(response.getStatusLine().getStatusCode(),
+					EntityUtils.toString(response.getEntity(), "UTF-8"));
+		} finally {
+			if (response != null) {
+				response.close();
+			}
+		}
+	}
 
 	@Override
 	public HttpResult doGet(String url) throws ParseException, ClientProtocolException, IOException {

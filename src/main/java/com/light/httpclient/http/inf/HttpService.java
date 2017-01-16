@@ -11,6 +11,7 @@ import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import com.light.httpclient.http.HttpResult;
 
@@ -29,6 +30,14 @@ import com.light.httpclient.http.HttpResult;
  *          </pre>
  */
 public interface HttpService {
+	
+	/**
+	 * 
+	 * 设置请求客户端实例
+	 * 
+	 * @param httpclient
+	 */
+	void setCloseableHttpClient(CloseableHttpClient closeableHttpClient);
 
 	/**
 	 * 

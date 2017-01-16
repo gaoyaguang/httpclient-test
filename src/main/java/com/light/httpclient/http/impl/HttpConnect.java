@@ -1,18 +1,9 @@
 package com.light.httpclient.http.impl;
 
-import java.io.IOException;
-
-import javax.annotation.Resource;
-
-import org.apache.http.ParseException;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-
-import com.light.httpclient.http.HttpResult;
 
 /**
  * 
@@ -30,30 +21,10 @@ import com.light.httpclient.http.HttpResult;
  */
 @Service("httpConnect")
 public class HttpConnect extends AbstractHttpConnect {
-
-	@Resource
-	private CloseableHttpClient httpclient;
 	
-	/**
-	 * 
-	 * 请求服务端方法
-	 * 
-	 * @param method	请求方式：GET POST DELETE PUT
-	 * @return
-	 * @throws ParseException
-	 * @throws ClientProtocolException
-	 * @throws IOException
-	 */
-	public HttpResult connect(HttpRequestBase method) throws ParseException, ClientProtocolException, IOException {
-		CloseableHttpResponse response = null;
-		try {
-			response = httpclient.execute(method);
-			return new HttpResult(response.getStatusLine().getStatusCode(),
-					EntityUtils.toString(response.getEntity(), "UTF-8"));
-		} finally {
-			if (response != null) {
-				response.close();
-			}
-		}
+	@Override
+	@Autowired
+	public void setCloseableHttpClient(@Qualifier("httpclient")CloseableHttpClient closeableHttpClient) {
+		this.closeableHttpClient = closeableHttpClient;
 	}
 }

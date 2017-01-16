@@ -8,10 +8,7 @@ import java.security.KeyStore;
 import javax.annotation.Resource;
 import javax.net.ssl.SSLContext;
 
-import org.apache.http.ParseException;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.config.Registry;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -19,11 +16,12 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
-import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import com.light.httpclient.http.HttpResult;
 import com.light.httpclient.http.ssl.MySSLConnectionSocketFactory;
+import com.light.httpclient.util.PropertiesUtil;
 
 /**
  * 
@@ -45,55 +43,53 @@ public class HttpsConnect extends AbstractHttpConnect {
 	@Resource
 	private HttpClientBuilder httpClientBuilder;
 
-	@Resource
-	private CloseableHttpClient httpsclient;
+	private static Integer maxTotal;
+
+	private static Integer defaultMaxPerRoute;
+	
+	public HttpsConnect() {
+		super();
+	}
+	
+	public HttpsConnect(CloseableHttpClient closeableHttpClient) {
+		super();
+		this.setCloseableHttpClient(closeableHttpClient);
+	}
+	
+	@Override
+	@Autowired
+	public void setCloseableHttpClient(@Qualifier("httpsclient")CloseableHttpClient closeableHttpClient) {
+		this.closeableHttpClient = closeableHttpClient;
+	}
+
+	static {
+		String path = "/init.properties";
+		String maxTotals = PropertiesUtil.getValue(path, "httpclient.maxTotal");
+		maxTotal = StringUtils.isBlank(maxTotals) ? 1000 : Integer.parseInt(maxTotals);
+		String defaultMaxPerRoutes = PropertiesUtil.getValue(path, "httpclient.maxTotal");
+		defaultMaxPerRoute = StringUtils.isBlank(defaultMaxPerRoutes) ? 300 : Integer.parseInt(defaultMaxPerRoutes);
+	}
 
 	/**
 	 * 
 	 * <p>
-	 * 默认取消SSL验证
+	 * 	设置证书后会验证证书的合法性
 	 * </p>
 	 * <p>
-	 * 设置之后会进行SSL验证
+	 * 	为了防止线程安全问题，设置后重新实例化一个对象
 	 * </p>
 	 * 
-	 * @param keyStorePath
-	 * @param keyStorepass
+	 * @param keyStorePath	证书存放路径
+	 * @param keyStorepass	证书密码
+	 * @return HttpsConnect 新对象
 	 */
-	public void setSSLContext(String keyStorePath, String keyStorepass) {
+	public HttpsConnect setSSLContext(String keyStorePath, String keyStorepass) {
 		Registry<ConnectionSocketFactory> socketFactoryRegistry = MySSLConnectionSocketFactory
 				.getSocketFactoryRegistry(custom(keyStorePath, keyStorepass));
 		PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
-		httpsclient = httpClientBuilder.setConnectionManager(connManager).build();
-	}
-
-	public HttpsConnect() {
-		super();
-		// httpClientBuilder.setConnectionManager(connManager).build();
-	}
-
-	/**
-	 * 
-	 * 请求服务端方法
-	 * 
-	 * @param method
-	 *            请求方式：GET POST DELETE PUT
-	 * @return
-	 * @throws ParseException
-	 * @throws ClientProtocolException
-	 * @throws IOException
-	 */
-	public HttpResult connect(HttpRequestBase method) throws ParseException, ClientProtocolException, IOException {
-		CloseableHttpResponse response = null;
-		try {
-			response = httpsclient.execute(method);
-			return new HttpResult(response.getStatusLine().getStatusCode(),
-					EntityUtils.toString(response.getEntity(), "UTF-8"));
-		} finally {
-			if (response != null) {
-				response.close();
-			}
-		}
+		connManager.setDefaultMaxPerRoute(defaultMaxPerRoute);
+		connManager.setMaxTotal(maxTotal);
+		return new HttpsConnect(httpClientBuilder.setConnectionManager(connManager).build());
 	}
 
 	public static SSLContext custom(String keyStorePath, String keyStorepass) {

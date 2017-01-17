@@ -34,9 +34,6 @@ import com.light.httpclient.util.PropertiesUtil;
  *               <p>
  * 				线程不安全的
  *               </p>
- *               <p>
- * 				分别创建验证SSL和取消验证SSL的对象
- *               </p>
  *
  * @author GaoYaguang
  * @version 1.0.0
@@ -90,7 +87,7 @@ public class HttpsConnect extends AbstractHttpConnect {
 
 	/**
 	 * <p>
-	 * 注册带证书请求客户端
+	 * 	注册带证书请求客户端
 	 * </p>
 	 */
 	public void registry() {

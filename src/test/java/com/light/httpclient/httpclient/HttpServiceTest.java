@@ -4,8 +4,11 @@ import java.net.SocketTimeoutException;
 
 import javax.annotation.Resource;
 
+import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -22,11 +25,20 @@ public class HttpServiceTest {
 	@Resource
 	private HttpsConnect httpsConnect;
 
+	@Autowired
+	private HttpsConnect httpSSLConnect;
+
+	@Before
+	public void before() {
+		httpSSLConnect.setDefaultMaxPerRoute(10).setMaxTotal(200).setKeyStorepass("123456")
+				.setKeyStorePath("D:/keys/wsriakey").registry();
+	}
+
 	@Test
 	public void testDoGet() {
 
-//		 String url = "https://sso.wsria.com:8443/blog/rest/page/login";
-		String url = "https://kyfw.12306.cn/otn/";
+		String url = "https://sso.wsria.com:8443/blog/rest/page/login";
+		// String url = "https://kyfw.12306.cn/otn/";
 		// String url = "http://fanyi.youdao.com/";
 		try {
 			System.out.println("======================普通http请求测试=======================");
@@ -45,10 +57,9 @@ public class HttpServiceTest {
 			System.out.println("======================https绕过ssl检查测试=======================");
 			String response = httpsConnect.doGet(url).getData();
 			System.out.println(response);
-			
+
 			System.out.println("======================https检查ssl测试=======================");
-			httpsConnect.setMaxTotal(10);
-			String response1 = httpsConnect.setSSLContext("D:/keys/wsriakey", "123456").doGet(url).getData();
+			String response1 = httpSSLConnect.doGet(url).getData();
 			System.out.println(response1);
 
 		} catch (SocketTimeoutException e) {
@@ -60,18 +71,18 @@ public class HttpServiceTest {
 		}
 	}
 
-	// @Test
-	// public void testDoPost() {
-	// try {
-	// String url = "http://localhost:8080/traffic-api/orderFlowService";
-	// String request =
-	// "{\"serialNumber\":\"Test20161216160023\",\"mobile\":\"eca84a651d668132b3aa8dfe7e8071b9\",\"flowno\":\"dbdc380273af72ea\",\"merchantNo\":\"6b3932ab201e9f1e\",\"source\":\"ae9d0a3edffc9842\",\"token\":\"a700178e35342de8\",\"sign\":\"60737b75bf7c80a6b63a337446d074a42303470c40e860c46bc2e8773dc2c1a37e8cf35b9a8649040edad8a5e52273eb113ccb941d2efa737a247c25c5911d0ddb20a0c93ad38f9f40798f082c5f91adffef15e24cf8778471f17fda22d9c06ef2628b1471b2b5212dbfb1a3f8bcc67fcdec7db568efb6d7190d8d7e5b9b230ae6f5a720a741bd3fa00d1f5c3badbf12\"}";
-	// String response = httpsConnect.doPost(url, request).getData();
-	// System.err.println(response);
-	// } catch (SocketTimeoutException e) {
-	// System.err.println("超时异常：" + e);
-	// } catch (Exception e) {
-	// System.err.println("其他异常：" + e);
-	// }
-	// }
+	@Ignore
+	@Test
+	public void testDoPost() {
+		try {
+			String url = "http://localhost:8080/traffic-api/orderFlowService";
+			String request = "{\"serialNumber\":\"Test20161216160023\",\"mobile\":\"eca84a651d668132b3aa8dfe7e8071b9\",\"flowno\":\"dbdc380273af72ea\",\"merchantNo\":\"6b3932ab201e9f1e\",\"source\":\"ae9d0a3edffc9842\",\"token\":\"a700178e35342de8\",\"sign\":\"60737b75bf7c80a6b63a337446d074a42303470c40e860c46bc2e8773dc2c1a37e8cf35b9a8649040edad8a5e52273eb113ccb941d2efa737a247c25c5911d0ddb20a0c93ad38f9f40798f082c5f91adffef15e24cf8778471f17fda22d9c06ef2628b1471b2b5212dbfb1a3f8bcc67fcdec7db568efb6d7190d8d7e5b9b230ae6f5a720a741bd3fa00d1f5c3badbf12\"}";
+			String response = httpsConnect.doPost(url, request).getData();
+			System.err.println(response);
+		} catch (SocketTimeoutException e) {
+			System.err.println("超时异常：" + e);
+		} catch (Exception e) {
+			System.err.println("其他异常：" + e);
+		}
+	}
 }

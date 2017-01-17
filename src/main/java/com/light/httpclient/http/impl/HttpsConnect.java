@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyStore;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -15,6 +16,7 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.IdleConnectionEvictor;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
 import org.slf4j.Logger;
@@ -29,6 +31,12 @@ import com.light.httpclient.util.PropertiesUtil;
 /**
  * 
  * @Description: HTTPS 实现类
+ *               <p>
+ * 				线程不安全的
+ *               </p>
+ *               <p>
+ * 				分别创建验证SSL和取消验证SSL的对象
+ *               </p>
  *
  * @author GaoYaguang
  * @version 1.0.0
@@ -42,32 +50,27 @@ import com.light.httpclient.util.PropertiesUtil;
  */
 @Service("httpsConnect")
 public class HttpsConnect extends AbstractHttpConnect {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(HttpsConnect.class);
 
 	@Resource
 	private HttpClientBuilder httpClientBuilder;
-	
-	/**只在检查SSL时用到 */
+
+	/** 只在检查SSL时用到 */
 	private Integer maxTotal;
-	/**只在检查SSL时用到 */
+	/** 只在检查SSL时用到 */
 	private Integer defaultMaxPerRoute;
-	
-	public HttpsConnect() {
-		super();
-	}
-	
-	public HttpsConnect(CloseableHttpClient closeableHttpClient) {
-		super();
-		this.setCloseableHttpClient(closeableHttpClient);
-	}
-	
+
+	private String keyStorePath;
+
+	private String keyStorepass;
+
 	@Override
 	@Autowired
-	public void setCloseableHttpClient(@Qualifier("httpsclient")CloseableHttpClient closeableHttpClient) {
+	public void setCloseableHttpClient(@Qualifier("httpsclient") CloseableHttpClient closeableHttpClient) {
 		this.closeableHttpClient = closeableHttpClient;
 	}
-	
+
 	@PostConstruct
 	public void init() {
 		try {
@@ -79,34 +82,28 @@ public class HttpsConnect extends AbstractHttpConnect {
 			String defaultMaxPerRoutes = PropertiesUtil.getValue(path, "httpclient.maxTotal");
 			if (!StringUtils.isBlank(defaultMaxPerRoutes)) {
 				this.setDefaultMaxPerRoute(Integer.parseInt(defaultMaxPerRoutes));
-			} 
+			}
 		} catch (Exception e) {
 			logger.error("初始化http配置信息异常：{}", e.getMessage());
 		}
 	}
-	
+
 	/**
-	 * 
 	 * <p>
-	 * 	设置证书后会验证证书的合法性
+	 * 注册带证书请求客户端
 	 * </p>
-	 * <p>
-	 * 	为了防止线程安全问题，设置后重新实例化一个对象
-	 * </p>
-	 * 
-	 * @param keyStorePath	证书存放路径
-	 * @param keyStorepass	证书密码
-	 * @return HttpsConnect 新对象
 	 */
-	public HttpsConnect setSSLContext(String keyStorePath, String keyStorepass) {
+	public void registry() {
 		Registry<ConnectionSocketFactory> socketFactoryRegistry = MySSLConnectionSocketFactory
 				.getSocketFactoryRegistry(custom(keyStorePath, keyStorepass));
-		PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
-		connManager.setDefaultMaxPerRoute(defaultMaxPerRoute);
-		connManager.setMaxTotal(maxTotal);
-		return new HttpsConnect(httpClientBuilder.setConnectionManager(connManager).build());
+		PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(
+				socketFactoryRegistry);
+		connectionManager.setDefaultMaxPerRoute(defaultMaxPerRoute);
+		connectionManager.setMaxTotal(maxTotal);
+		new IdleConnectionEvictor(connectionManager, 10000, TimeUnit.MILLISECONDS).start();
+		this.setCloseableHttpClient(httpClientBuilder.setConnectionManager(connectionManager).build());
 	}
-
+	
 	public static SSLContext custom(String keyStorePath, String keyStorepass) {
 		SSLContext sc = null;
 		FileInputStream instream = null;
@@ -134,22 +131,46 @@ public class HttpsConnect extends AbstractHttpConnect {
 	public Integer getDefaultMaxPerRoute() {
 		return defaultMaxPerRoute;
 	}
+
 	/**
 	 * 仅在检查SSL的情况下起作用
+	 * 
 	 * @param maxTotal
 	 */
-	public void setDefaultMaxPerRoute(Integer defaultMaxPerRoute) {
+	public HttpsConnect setDefaultMaxPerRoute(Integer defaultMaxPerRoute) {
 		this.defaultMaxPerRoute = defaultMaxPerRoute;
+		return this;
 	}
 
 	public Integer getMaxTotal() {
 		return maxTotal;
 	}
+
 	/**
 	 * 仅在检查SSL的情况下起作用
+	 * 
 	 * @param maxTotal
 	 */
-	public void setMaxTotal(Integer maxTotal) {
+	public HttpsConnect setMaxTotal(Integer maxTotal) {
 		this.maxTotal = maxTotal;
+		return this;
+	}
+
+	public String getKeyStorePath() {
+		return keyStorePath;
+	}
+
+	public HttpsConnect setKeyStorePath(String keyStorePath) {
+		this.keyStorePath = keyStorePath;
+		return this;
+	}
+
+	public String getKeyStorepass() {
+		return keyStorepass;
+	}
+
+	public HttpsConnect setKeyStorepass(String keyStorepass) {
+		this.keyStorepass = keyStorepass;
+		return this;
 	}
 }

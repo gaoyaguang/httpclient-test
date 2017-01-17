@@ -82,22 +82,6 @@
 		</encoder>
 	</appender>
 
-	<!-- 数据库输出 -->
-	<appender name="db_mysql" class="ch.qos.logback.classic.db.DBAppender">
-		<filter class="ch.qos.logback.classic.filter.LevelFilter">
-			<level>ERROR</level>
-			<onMatch>ACCEPT</onMatch>
-			<onMismatch>DENY </onMismatch>
-		</filter>
-		<connectionSource
-			class="ch.qos.logback.core.db.DriverManagerConnectionSource">
-			<driverClass>com.mysql.jdbc.Driver</driverClass>
-			<url>jdbc:mysql://127.0.0.1:3306/icm_flow</url>
-			<user>root</user>
-			<password>root</password>
-		</connectionSource>
-	</appender>
-
 	<logger name="com.ibatis" level="INFO" />
 	<logger name="com.ibatis.common.jdbc.SimpleDataSource" level="INFO" />
 	<logger name="com.ibatis.common.jdbc.ScriptRunner" level="INFO" />
@@ -114,7 +98,6 @@
 <!-- 		<appender-ref ref="file—info" /> -->
 <!-- 		<appender-ref ref="file—error" /> -->
 <!-- 		<appender-ref ref="file-str" /> -->
-<!-- 		<appender-ref ref="db_mysql" /> -->
 <!-- 	</root> -->
 	
 	<root level="INFO">
@@ -126,6 +109,5 @@
 <!-- 	<root level="ERROR"> -->
 <!-- 		<appender-ref ref="stdout" /> -->
 <!-- 		<appender-ref ref="file—error" /> -->
-<!-- 		<appender-ref ref="db_mysql" /> -->
 <!-- 	</root> -->
 </configuration>

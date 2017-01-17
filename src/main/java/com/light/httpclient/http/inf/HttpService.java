@@ -30,7 +30,7 @@ import com.light.httpclient.http.HttpResult;
  *          </pre>
  */
 public interface HttpService {
-	
+
 	/**
 	 * 
 	 * 设置请求客户端实例

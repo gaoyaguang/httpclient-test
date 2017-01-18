@@ -1,24 +1,17 @@
 package com.light.httpclient.http.impl;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.KeyStore;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import javax.net.ssl.SSLContext;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.config.Registry;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.IdleConnectionEvictor;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.ssl.SSLContexts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +25,7 @@ import com.light.httpclient.util.PropertiesUtil;
  * 
  * @Description: HTTPS 实现类
  *               <p>
- * 				线程不安全的
+ *               线程不安全的
  *               </p>
  *
  * @author GaoYaguang
@@ -87,42 +80,18 @@ public class HttpsConnect extends AbstractHttpConnect {
 
 	/**
 	 * <p>
-	 * 	注册带证书请求客户端
+	 * 注册带证书请求客户端
 	 * </p>
 	 */
 	public void registry() {
 		Registry<ConnectionSocketFactory> socketFactoryRegistry = MySSLConnectionSocketFactory
-				.getSocketFactoryRegistry(custom(keyStorePath, keyStorepass));
+				.getSocketFactoryRegistry(keyStorePath, keyStorepass);
 		PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(
 				socketFactoryRegistry);
 		connectionManager.setDefaultMaxPerRoute(defaultMaxPerRoute);
 		connectionManager.setMaxTotal(maxTotal);
 		new IdleConnectionEvictor(connectionManager, 10000, TimeUnit.MILLISECONDS).start();
 		this.setCloseableHttpClient(httpClientBuilder.setConnectionManager(connectionManager).build());
-	}
-	
-	public static SSLContext custom(String keyStorePath, String keyStorepass) {
-		SSLContext sc = null;
-		FileInputStream instream = null;
-		KeyStore trustStore = null;
-		try {
-			trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-			instream = new FileInputStream(new File(keyStorePath));
-			trustStore.load(instream, keyStorepass.toCharArray());
-			// 相信自己的CA和所有自签名的证书
-			sc = SSLContexts.custom().loadTrustMaterial(trustStore, new TrustSelfSignedStrategy()).build();
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			if (instream != null) {
-				try {
-					instream.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		return sc;
 	}
 
 	public Integer getDefaultMaxPerRoute() {

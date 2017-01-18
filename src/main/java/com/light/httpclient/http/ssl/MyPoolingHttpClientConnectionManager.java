@@ -9,7 +9,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 public class MyPoolingHttpClientConnectionManager extends PoolingHttpClientConnectionManager {
 
 	private static Registry<ConnectionSocketFactory> getDefaultRegistry() {
-		return MySSLConnectionSocketFactory.getSocketFactoryRegistry(MySSLConnectionSocketFactory.getSSLContext());
+		return MySSLConnectionSocketFactory.getSocketFactoryRegistry();
 	}
 
 	public MyPoolingHttpClientConnectionManager() {

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
@@ -128,6 +129,9 @@ public abstract class AbstractHttpConnect implements HttpService {
 		if (url == null || parameter == null) {
 			return null;
 		}
+		if (contentType == null) {
+			contentType = ContentType.APPLICATION_JSON;
+		}
 		HttpPost httpPost = new HttpPost(url);
 		httpPost.setEntity(new StringEntity(parameter, contentType));
 		if (headers != null) {
@@ -155,6 +159,9 @@ public abstract class AbstractHttpConnect implements HttpService {
 			throws ParseException, ClientProtocolException, IOException {
 		if (url == null || params == null) {
 			return null;
+		}
+		if (charset == null) {
+			charset = Consts.UTF_8;
 		}
 		HttpPost httpPost = new HttpPost(url);
 		List<NameValuePair> parameters = new ArrayList<NameValuePair>();

@@ -46,9 +46,9 @@ public class HttpsConnect extends AbstractHttpConnect {
 	@Resource
 	private HttpClientBuilder httpClientBuilder;
 
-	/** 只在检查SSL时用到 */
+	/** 仅在检查SSL时用到 */
 	private Integer maxTotal;
-	/** 只在检查SSL时用到 */
+	/** 仅在检查SSL时用到 */
 	private Integer defaultMaxPerRoute;
 
 	private String keyStorePath;
